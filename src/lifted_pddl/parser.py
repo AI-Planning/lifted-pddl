@@ -82,8 +82,7 @@ class Parser:
 		# 'thing': {'airplane', 'thing', 'vehicle', 'truck', 'package'}, 'package': {'package'}, 'vehicle': {'vehicle', 'truck', 'airplane'}, 'truck': {'truck'}, 'airplane': {'airplane'}, 'airport': {'airport'}}
 		
 		# Predicates
-		# self.predicates = [pred.name for pred in language.predicates]
-		self.predicates = set([pred.name for pred in language.predicates if type(pred.name) == str]) # type(pred.name) != str -> the predicate is a built-in (either '=' or '!=')
+		self.predicates = set([(pred.name, tuple([param_type.name for param_type in pred.sort])) for pred in language.predicates if type(pred.name) == str]) # type(pred.name) != str -> the predicate is a built-in (either '=' or '!=')
 
 		# Domain constants
 		# Store two lists, containing the name and type of each constant
