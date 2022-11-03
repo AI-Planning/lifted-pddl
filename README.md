@@ -73,3 +73,7 @@ Secondly, it can be called from the command line. It supports different modes of
 ## Limitations
 
 Lifted PDDL only uses typed STRIPS (`:requirements :typing`) and does not support any other PDDL extension. However, it should be easy to adapt to most PDDL extensions, such as conditional effects, negative preconditions, etc. The code is brief, simple to understand and has many comments, so I encourage you to implement any functionality you need and submit a pull request to the [Github](https://github.com/ari-dasci/lifted-pddl)! 😄
+
+## Authors
+
+ - [Carlos Núñez Molina](https://github.com/TheAeryan)
