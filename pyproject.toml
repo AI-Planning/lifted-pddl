@@ -8,7 +8,6 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "lifted-pddl"
-version = "1.0.3"
 description = "A lightweight framework for parsing PDDL in lifted form."
 readme = "README.md"
 authors = [{ name = "Carlos Núñez Molina", email = "ccaarlos@ugr.es"}]
