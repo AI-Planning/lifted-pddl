@@ -1,0 +1,3 @@
+# MANIFEST.in
+
+include src/lifted_pddl/data/*

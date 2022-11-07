@@ -1,0 +1,28 @@
+# pyproject.toml
+
+[build-system]
+requires = ["setuptools>=61.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lifted-pddl"
+version = "1.0.3"
+description = "A lightweight framework for parsing PDDL in lifted form."
+readme = "README.md"
+authors = [{ name = "Carlos Núñez Molina", email = "ccaarlos@ugr.es"}]
+license = { file = "LICENSE" }
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+]
+keywords = ["automated_planning", "PDDL", "parser"]
+dependencies = [
+    "tarski",
+]
+
+[project.urls]
+Homepage = "https://github.com/AI-Planning/lifted-pddl"
+
+[project.scripts]
+lifted_pddl = "lifted_pddl.__main__:main"
