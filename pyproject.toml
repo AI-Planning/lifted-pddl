@@ -1,13 +1,12 @@
 # pyproject.toml
 
 [build-system]
-requires = ["setuptools>=61.0.0", "wheel", "setuptools_scm[toml]>=6.2"]
+requires = ["setuptools>=61.0.0", "wheel"]
 build-backend = "setuptools.build_meta"
-
-[tool.setuptools_scm]
 
 [project]
 name = "lifted-pddl"
+version = "1.0.4"
 description = "A lightweight framework for parsing PDDL in lifted form."
 readme = "README.md"
 authors = [{ name = "Carlos Núñez Molina", email = "ccaarlos@ugr.es"}]
