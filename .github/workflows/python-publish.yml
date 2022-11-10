@@ -6,10 +6,6 @@
 # separate terms of service, privacy policy, and support
 # documentation.
 
-# Workflow adapted so that package version number (shown in PyPI) is automatically obtained
-# from the version number in the Github release
-# See: https://www.seanh.cc/2022/05/21/publishing-python-packages-from-github-actions/
-
 name: Upload Python Package
 
 on:
@@ -27,8 +23,6 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v3
-      with:
-        fetch-depth: 0
     - name: Set up Python
       uses: actions/setup-python@v3
       with:
