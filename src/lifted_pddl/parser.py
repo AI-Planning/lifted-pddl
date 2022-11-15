@@ -401,90 +401,23 @@ class Parser:
 		# Obtain the action parameters, i.e., those variables of class 'param'
 		action_params = [var for var, var_class in zip(action_vars, vars_class) if var_class == 'param']
 
+		assert len(var_assign) == len(action_params), "The number of variables in var_assign must be the same that the name of action parameters."
+
 		# Check if the objects the action parameters are instantiated on are of the correct type
 		for obj_ind, param_type in zip(var_assign, action_params):
 			if objects[obj_ind] not in type_hierarchy[param_type]:
 				return False # If a single parameter is of the incorrect type, we know the action is not applicable
 
-		# Check that nullary preconditions are met
-
-
-
-
-
 		# Add free variables to @var_assign, accounting for the variables in existential preconditions
 		num_exist_vars = vars_class.count('exists')
-		full_var_assign = list(var_assign) + [-1]*num_exist_vars # Note: we know that vars corresponding to existential preconditions go after vars corresponding to action params
+		var_assigns = [list(var_assign) + [-1]*num_exist_vars] # Note: we know that vars corresponding to existential preconditions go after vars corresponding to action params
 
+		# Obtain all the variable instantiations where the bind variables correspond to the variables in @var_assign
+		# and the free variables correspond to the variables given by existential preconditions
+		full_var_assigns = self._get_applicable_var_assigns_action(action, var_assigns)
 
-		for precond in action_preconds:
-			precond_pred, precond_vars = precond
-			new_var_assigns = [] # Will contain the partial variable assignments after we process the current precondition (precond)
-
-			inds_to_check = [(ind, var) for ind, var in enumerate(precond_vars) if is_var_bound[var]]
-
-			# If len(inds_to_check) == 0, this means that we don't have to check any variable in the assignments for this precondition
-			# i.e., as long as an atom is of the correct predicate and its objects of the correct type, all partial variable assignments match the atom
-			if len(inds_to_check) == 0:
-				no_vars_to_check = True
-				atom_obj_inds_to_check, vars_to_check = tuple(), tuple()
-			else:
-				no_vars_to_check = False	
-				atom_obj_inds_to_check, vars_to_check = zip(*inds_to_check)
-
-			for atom in atoms:
-				atom_pred, atom_obj_inds = atom
-
-				# Check if the atom's predicate is the same as that of the precondition
-				if atom_pred == precond_pred:
-					# The types of the objects the atom is instantiated on must inherit from the type of the corresponding parameter type
-					types_correct = True
-					for atom_obj_ind, precond_var in zip(atom_obj_inds, precond_vars):
-						types_correct = types_correct and (objects[atom_obj_ind] in type_hierarchy[action_vars[precond_var]])
-
-					if types_correct:
-
-						for var_assign in var_assigns:
-							# Check if the atom matches the current var assignment (var_assign)
-							# It is a match if the atom's objects match the objects of the corresponding vars in var_assign for those
-							# vars which are bound, i.e., atom_obj_inds[atom_obj_inds_to_check] == var_assign[vars_to_check]
-							if no_vars_to_check or itemgetter(*atom_obj_inds_to_check)(atom_obj_inds) == itemgetter(*vars_to_check)(var_assign):
-								new_var_assign = var_assign.copy()
-								deque(map(new_var_assign.__setitem__, precond_vars, atom_obj_inds), maxlen=0) # The deque is simply to evaluate the map, as in python 3 it has lazy evaluation
-
-								new_var_assigns.append(new_var_assign)
-
-
-			# Update the partial variable assignments
-			var_assigns = new_var_assigns
-
-			# If this happens, then the current precondition is not met for any variable substitution, so the action is not applicable!
-			if len(var_assigns) == 0:
-				applicable_actions[action_name] = [] # No valid variable substitutions for this action
-				break # No need to check the remaining preconditions
-
-			# Bind variables which appear in the precondition
-			for var in precond_vars:
-				is_var_bound[var] = True
-
-
-
-
-
-		# ---- OLD 
-
-		# Check each precondition is met
-		for precond in action_preconds:
-			# Assign the variables in the precondition according to @var_assign, i.e., ground the variables
-			ground_vars = tuple([var_assign[var] for var in precond[1]])
-			precond = tuple([precond[0], ground_vars])
-
-			# Check if the grounded atom corresponding to the precondition is in the state atoms
-			if precond not in atoms:
-				return False
-
-		# At this point of the code, we know all the preconditions are met, so the action is applicable
-		return True
+		# If the action is applicable, there will be at least one valid variable assignment in full_var_assigns
+		return len(full_var_assigns) > 0
 
 	"""
 	Successor function.
