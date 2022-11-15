@@ -6,6 +6,8 @@ from tarski.io import PDDLReader
 from tarski.syntax.formulas import CompoundFormula, QuantifiedFormula, Atom
 from tarski.fstrips.fstrips import AddEffect, DelEffect
 
+import sys
+
 """
 This class implements functionality for:
 	- Parsing PDDL domains and problems
@@ -112,9 +114,11 @@ class Parser:
 			# Obtain variables in existential preconditions
 			preconds = action[1].precondition
 			preconds = preconds.subformulas if isinstance(preconds, CompoundFormula) else [preconds]
-			exist_variables = [var for var in precond.variables for precond in preconds if isinstance(precond, QuantifiedFormula) and precond.quantifier.name == 'Exists']
+			exist_variables = [var for precond in preconds if (isinstance(precond, QuantifiedFormula) and precond.quantifier.name == 'Exists') for var in precond.variables]
+			
 			variables.extend(exist_variables)
 			variables_class.extend(['exists']*len(exist_variables))
+			variables_class = tuple(variables_class)
 
 			# Obtain variable names
 			var_names = [var.symbol for var in variables]
