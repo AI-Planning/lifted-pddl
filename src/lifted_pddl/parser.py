@@ -1,9 +1,9 @@
 from operator import itemgetter
 from collections import deque
-from itertools import product
+from itertools import product, chain
 
 from tarski.io import PDDLReader
-from tarski.syntax.formulas import CompoundFormula, Atom
+from tarski.syntax.formulas import CompoundFormula, QuantifiedFormula, Atom
 from tarski.fstrips.fstrips import AddEffect, DelEffect
 
 """
@@ -12,7 +12,7 @@ This class implements functionality for:
 	- Obtaining the actions applicable at the init state of the corresponding problem
 	- Obtaining the next state resulting from applying an action to the init state (successor function)
 
-<Limitations>: it supports types (as in typed STRIPS) but not other PDDL extensions, such as
+<Limitations>: it supports types (as in typed STRIPS) and existential preconditions but not other PDDL extensions, such as
                negative preconditions, disjuntions (or), conditional effects (:when), etc.
                However, this code should be easy to extend to those situations.
 """
@@ -91,23 +91,54 @@ class Parser:
 		self.constant_types = tuple([const.sort.name for const in constants])
 
 		# Actions
+		"""
+		Action representation as a tuple of actions. Each action represented as another tuple (name, action_vars, preconds, effects):
+			- name is the action name
+			- action_vars is a tuple which contains the type of each action variable, and the class of each variable (either an action parameter or variable introduced
+			  by an existential precondition)
+			- preconds contains the action preconditions
+			- effects contains the action effects
+		"""
 		self.actions = set()
 
 		for action in problem.actions.items():
+			# Variables and var_names correspond to both variables associated with the action parameters and also
+			# those associated with existential preconditions (which do not appear in the action parameters)
+			
+			# Obtain variables in action parameters
 			variables = action[1].parameters.vars()
+			variables_class = ['param']*len(variables) # Class of each variable: either 'param' (action parameter) or 'exists' (variable introduced by existential precondition)
+
+			# Obtain variables in existential preconditions
+			preconds = action[1].precondition
+			preconds = preconds.subformulas if isinstance(preconds, CompoundFormula) else [preconds]
+			exist_variables = [var for var in precond.variables for precond in preconds if isinstance(precond, QuantifiedFormula) and precond.quantifier.name == 'Exists']
+			variables.extend(exist_variables)
+			variables_class.extend(['exists']*len(exist_variables))
+
+			# Obtain variable names
 			var_names = [var.symbol for var in variables]
 
-			# Action parameters, as a tuple of their types
+			# Action variables, as a tuple of their types
+			# It includes all action variables. Right now, that means it includes action parameters and variables introduced by existential preconditions
+			# To see what each variable corresponds to, use is_action_param and has_exist_quantifier.
 			# Example: ('truck', 'location', 'location', 'city')
-			params = tuple([var.sort.name for var in variables])
+			action_variables = tuple([var.sort.name for var in variables])
 
 			# Action preconditions, as a tuple made up of every precondition
 			# Each precondition is represented by a tuple (predicate_name, vars)
 			# Variables are substituted by their corresponding parameter index
 			# Example: ( ('at', (0, 1)), ('in-city', (1, 3)), ('in-city', (2, 3)) )
-			preconds = action[1].precondition
-			preconds = preconds.subformulas if isinstance(preconds, CompoundFormula) else [preconds]
-			preconds = tuple([(precond.predicate.name, tuple([var_names.index(var.symbol) for var in precond.subterms])) for precond in preconds])
+
+			# Decompose QuantifiedFormulas into their subformulas (while ignoring the quantifier)
+			preconds_list = []
+			for precond in preconds:
+				if isinstance(precond, QuantifiedFormula): 
+					preconds_list.extend(precond.formula.subformulas)
+				else:
+					preconds_list.append(precond)
+
+			preconds_tuple = tuple([(precond.predicate.name, tuple([var_names.index(var.symbol) for var in precond.subterms])) for precond in preconds_list])
 
 			# Action effects, as a tuple made up of every effect
 			# Each effect is represented as a tuple (is_add_effect, predicate_name, vars)
@@ -116,7 +147,7 @@ class Parser:
 			effects = action[1].effects
 			effects = tuple([(isinstance(effect, AddEffect), effect.atom.predicate.name, tuple([var_names.index(var.symbol) for var in effect.atom.subterms])) for effect in effects])
 
-			self.actions.add( (action[0], params, preconds, effects) )
+			self.actions.add( (action[0], (action_variables, variables_class), preconds_tuple, effects) )
 
 	# We use tarski to parse the PDDL problem
 	# <Note>: This method can only be called after parse_domain()
