@@ -72,7 +72,7 @@ Secondly, it can be called from the command line. It supports different modes of
 
 ## Limitations
 
-Lifted PDDL only uses typed STRIPS (`:requirements :typing`) and does not support any other PDDL extension. However, it should be easy to adapt to most PDDL extensions, such as conditional effects, negative preconditions, etc. The code is brief, simple to understand and has many comments, so I encourage you to implement any functionality you need and submit a pull request to the [Github](https://github.com/ari-dasci/lifted-pddl)! 😄
+At the moment, Lifted PDDL only supports typed STRIPS and existential preconditions (`:requirements :typing :existential-preconditions`). In the future, it will be extended to support ADL and, maybe, other PDDL requirements. We also welcome contributions. The code is brief, simple to understand and has many comments, so I encourage you to implement any functionality you need and submit a pull request to the [Github](https://github.com/AI-Planning/lifted-pddl)! 😄
 
 ## Authors
 
