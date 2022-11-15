@@ -454,7 +454,8 @@ class Parser:
 				return new_atoms
 
 		# Perform the variable substitutions for the action_effects (i.e., ground the variables) according to @var_assign
-		_, action_params, action_preconds, action_effects = action
+		_, action_var_info, action_preconds, action_effects = action
+		action_vars, vars_class = action_var_info
 
 		ground_action_effects = []
 		for effect in action_effects:
@@ -467,11 +468,12 @@ class Parser:
 		# Del effects (effect[0]==False) -> delete the corresponding atom
 		# Note: we assume that no effects are in both the add and delete list
 		for effect in ground_action_effects:
-			if effect[0]: # Add effect
-				new_atoms.add( (effect[1], effect[2]) )
-			else: # Delete effect
-				effect_atom = (effect[1], effect[2])
+			effect_atom = (effect[1], effect[2])
 
+			if effect[0]: # Add effect		
+				if effect_atom not in new_atoms: # If the corresponding atom does already exist in the state atoms, we do nothing
+					new_atoms.add(effect_atom)
+			else: # Delete effect
 				if effect_atom in new_atoms: # If the corresponding atom does not exist in the state atoms, we do nothing
 					new_atoms.remove(effect_atom)
 
