@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: lifted-pddl
-Version: 1.0.4
+Version: 1.1.0
 Summary: A lightweight framework for parsing PDDL in lifted form.
 Home-page: https://github.com/AI-Planning/lifted-pddl
 Author: Carlos Núñez Molina

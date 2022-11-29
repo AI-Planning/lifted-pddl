@@ -15,9 +15,10 @@ This class implements functionality for:
 	- Obtaining the actions applicable at the init state of the corresponding problem
 	- Obtaining the next state resulting from applying an action to the init state (successor function)
 
-<Limitations>: it supports types (as in typed STRIPS) and existential preconditions but not other PDDL extensions, such as
-               negative preconditions, disjuntions (or), conditional effects (:when), etc.
-               However, this code should be easy to extend to those situations.
+<Limitations>: it only supports:
+				- types (as in typed STRIPS) 
+				- existential preconditions
+				- negative preconditions (although only negative atoms and not negative compound formulas)
 """
 class Parser:
 
@@ -114,8 +115,9 @@ class Parser:
 
 			# Obtain variables in existential preconditions
 			preconds = action[1].precondition
-			preconds = preconds.subformulas if isinstance(preconds, CompoundFormula) else [preconds]
-			exist_variables = [var for precond in preconds if (isinstance(precond, QuantifiedFormula) and precond.quantifier.name == 'Exists') for var in precond.variables]
+			# preconds = preconds.subformulas if isinstance(preconds, CompoundFormula) else [preconds] # Previous version
+			preconds_subformulas = preconds.subformulas if isinstance(preconds, CompoundFormula) else [preconds]
+			exist_variables = [var for precond in preconds_subformulas if (isinstance(precond, QuantifiedFormula) and precond.quantifier.name == 'Exists') for var in precond.variables]
 			
 			# <Note>: It is important that variables corresponding to action parameters go before variables corresponding to existential preconditions
 			variables.extend(exist_variables)
@@ -132,10 +134,68 @@ class Parser:
 			action_variables = tuple([var.sort.name for var in variables])
 
 			# Action preconditions, as a tuple made up of every precondition
-			# Each precondition is represented by a tuple (predicate_name, vars)
+			# Each precondition is represented by a tuple (preffix, predicate_name, vars)
+			# Preffix is False if the precondition is a negative precondition, and True otherwise
 			# Variables are substituted by their corresponding parameter index
-			# Example: ( ('at', (0, 1)), ('in-city', (1, 3)), ('in-city', (2, 3)) )
+			# Example: ( (True, 'at', (0, 1)), (False, 'in-city', (1, 3)), (True, 'in-city', (2, 3)) )
 
+			# preconds is a negated formula
+			if isinstance(preconds, CompoundFormula) and preconds.connective.name.lower() == 'not':
+				preconds_list = [(False, preconds)]
+			else:
+				preconds_list = [(True, preconds)]
+
+			preconds_modified = True
+			# Recursively process the formulas and subformulas in preconds_list
+			# until we have removed all the nesting levels (i.e., obtained all the subformulas
+			# and removed all the existential preconditions)
+			while preconds_modified:
+				new_preconds_list = []
+				preconds_modified = False
+
+				# Remove one nesting level of the formulas in preconds_list
+				for preffix, formula in preconds_list:
+					# If it is a compoundformula, split it into its subformulas
+					if isinstance(formula, CompoundFormula):
+
+						# Negated formula -> we negate the preffix (True -> False, False -> True)
+						if formula.connective.name.lower() == 'not':
+							subformulas = formula.subformulas
+
+							# If this condition is met, then it means that the negated formula contains
+							# several subformulas (i.e., it is in the form of (not (and ...))  )
+							# We can't parse compound negated subformulas at the moment
+							if len(subformulas) > 1 or not isinstance(subformulas[0], Atom):
+								raise Exception("We can't parse negative compound formulas in the preconditions, i.e., '(not (and ...))'")
+
+							subformulas = [(not preffix, f) for f in subformulas]
+							new_preconds_list.extend(subformulas)
+						
+						# Compound formula which is not a negation, but a conjuntion (and ...)
+						else:
+							subformulas = [(preffix, f) for f in formula.subformulas]
+							new_preconds_list.extend(subformulas)
+
+						preconds_modified = True
+
+					# If it has an existential quantifier, just ignore the quantifier
+					elif isinstance(formula, QuantifiedFormula):
+						
+						if preffix == False:
+							raise Exception("We can't parse preconditions of the type '(not (exists ... ))'")
+
+						new_preconds_list.append((preffix, formula.formula))
+						preconds_modified = True
+
+					# Else, it is a simple formula, so we add it
+					else:
+						new_preconds_list.append((preffix, formula))
+
+				preconds_list = new_preconds_list
+
+
+			"""
+			# Previous version
 			# Decompose QuantifiedFormulas into their subformulas (while ignoring the quantifier)
 			preconds_list = []
 			for precond in preconds:
@@ -148,8 +208,9 @@ class Parser:
 						preconds_list.append(formula)
 				else:
 					preconds_list.append(precond)
+			"""
 
-			preconds_tuple = tuple([(precond.predicate.name, tuple([var_names.index(var.symbol) for var in precond.subterms])) for precond in preconds_list])
+			preconds_tuple = tuple([(preffix, precond.predicate.name, tuple([var_names.index(var.symbol) for var in precond.subterms])) for preffix, precond in preconds_list])
 
 			# Action effects, as a tuple made up of every effect
 			# Each effect is represented as a tuple (is_add_effect, predicate_name, vars)

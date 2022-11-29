@@ -5,7 +5,6 @@ setup.py
 src/lifted_pddl/__init__.py
 src/lifted_pddl/__main__.py
 src/lifted_pddl/parser.py
-src/lifted_pddl/parser_OLD.py
 src/lifted_pddl.egg-info/PKG-INFO
 src/lifted_pddl.egg-info/SOURCES.txt
 src/lifted_pddl.egg-info/dependency_links.txt
