@@ -283,7 +283,6 @@ class Parser:
 	4. Return valid (applicable) variable assignments for the action.
 	"""
 
-
 	"""
 	Auxiliary function used by get_applicable_actions. It receives a set of variable assignments (each one with an arbitrary number of free and bind variables),
 	and returns a list with all the full variable assignments obtained from them and which correspond to applicable ground actions.
@@ -307,11 +306,11 @@ class Parser:
 		# Check if each nullary predicate in the preconditions appears in the state atoms.
 		# If so, we remove the nullary predicates from the action preconditions and check the rest of the preconditions.
 		# If not, the action is not applicable.
-		nullary_preconds = [precond for precond in action_preconds if len(precond[1]) == 0]
+		nullary_preconds = [precond for precond in action_preconds if len(precond[2]) == 0]
 
 		nullary_preconds_in_atoms = True
 		for nullary_precond in nullary_preconds:
-			if nullary_precond not in atoms: # The nullary precondition does not appear in the atoms
+			if nullary_precond[1:] not in atoms: # The nullary precondition does not appear in the atoms
 				nullary_preconds_in_atoms = False
 				break
 
@@ -320,14 +319,19 @@ class Parser:
 			return tuple() # empty tuple
 
 		# Remove the nullary predicates from the action preconditions
-		action_preconds = [precond for precond in action_preconds if len(precond[1]) > 0]
+		action_preconds = [precond for precond in action_preconds if len(precond[2]) > 0]
+
+		# Split the preconditions into positive and negative (i.e., (not ...))
+		positive_preconds = [precond for precond in action_preconds if precond[0]==True]
+		negative_preconds = [precond for precond in action_preconds if precond[0]==False]
 
 		# List of (possibly partial) variable assignments corresponding to potentially aplicable actions
 		var_assigns = copy.deepcopy(_var_assigns) # Deep copy the parameter so that it is not modified
 		is_var_bound = [var != -1 for var in var_assigns[0]] # Contains True if the corresponding variable is bound, and False if it's free
 
-		for precond in action_preconds:
-			precond_pred, precond_vars = precond
+		# Process the positive preconditions -> obtain the list of variable assignments which satisfy the positive preconditions
+		for precond in positive_preconds:
+			_, precond_pred, precond_vars = precond
 			new_var_assigns = [] # Will contain the partial variable assignments after we process the current precondition (precond)
 
 			# Obtain mapping from the indexes of the atom's objects to the indexes of the variables in var_assigns
@@ -405,6 +409,31 @@ class Parser:
 
 			new_var_assigns = product(*new_objs_var_assign) # Cartesian product
 			full_var_assigns.extend(new_var_assigns)
+
+
+		# <Negative preconditions>
+		# Remove the variable substitutions which do not satisfy the negative preconditions
+		for precond in negative_preconds: 
+			_, precond_pred, precond_vars = precond
+			new_var_assigns = []
+
+			# Check if each var_assign meets the current negative precondition
+			for var_assign in full_var_assigns:
+				# Substitute the precondition variables by the objects given by var_assign
+				precond_objs = tuple([var_assign[var] for var in precond_vars])
+				ground_precond = (precond_pred, precond_objs)
+
+				# Check if the grounded precondition is in the state atoms
+				if ground_precond not in atoms:
+					new_var_assigns.append(var_assign)
+
+			full_var_assigns = new_var_assings
+
+			# If there are no var_assigns left, we know that no variable substitution
+			# satisfies all the preconditions
+			if len(full_var_assigns) == 0:
+				return list()
+
 
 		# <Existential preconditions>
 		# Remove variables corresponding to existential preconditions from full_var_assigns.
