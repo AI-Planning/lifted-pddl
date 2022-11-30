@@ -72,7 +72,17 @@ Secondly, it can be called from the command line. It supports different modes of
 
 ## Limitations
 
-At the moment, Lifted PDDL only supports typed STRIPS and existential preconditions (`:requirements :typing :existential-preconditions`). In the future, it will be extended to support ADL and, maybe, other PDDL requirements. We also welcome contributions. The code is brief, simple to understand and has many comments, so I encourage you to implement any functionality you need and submit a pull request to the [Github](https://github.com/AI-Planning/lifted-pddl)! 😄
+At the moment, Lifted PDDL supports the following PDDL extensions:
+
+- Types (`:typing`).
+
+- Existential preconditions (`:existential-preconditions`), i.e., `(exists ...)` constructions in action preconditions.
+
+- Limited support for negative preconditions (`:negative-preconditions`), i.e., `(not ...)` constructions in action preconditions. However,
+  negative compound formulas are not supported, i.e., constructions like `(exists (not ...))` and `(not (and ...))`. At the moment, we only support
+  negated atoms in preconditions.
+
+In the future, Lifted PDDL will be extended to support ADL and, maybe, other PDDL requirements. We also welcome contributions. The code is brief, simple to understand and has many comments, so I encourage you to implement any functionality you need and submit a pull request to the [Github](https://github.com/AI-Planning/lifted-pddl)! 😄
 
 ## Authors
 

@@ -427,12 +427,12 @@ class Parser:
 				if ground_precond not in atoms:
 					new_var_assigns.append(var_assign)
 
-			full_var_assigns = new_var_assings
+			full_var_assigns = new_var_assigns
 
 			# If there are no var_assigns left, we know that no variable substitution
 			# satisfies all the preconditions
 			if len(full_var_assigns) == 0:
-				return list()
+				return tuple()
 
 
 		# <Existential preconditions>
