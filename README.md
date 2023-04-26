@@ -1,3 +1,5 @@
+[![PyPI version](https://badge.fury.io/py/lifted-pddl.svg)](https://badge.fury.io/py/lifted-pddl) [![Downloads](https://static.pepy.tech/badge/lifted-pddl)](https://pepy.tech/project/lifted-pddl)
+
 # Lifted PDDL
 A lightweight framework for the efficient parsing and manipulation of PDDL. 
 It achieves this by working on the PDDL description in its lifted form, i.e., without grounding it first. Lifted PDDL is heavily inspired by the [Powerlifted Planner](https://github.com/abcorrea/powerlifted) but encodes PDDL elements as in [Planning Problem Generation](https://github.com/ari-dasci/S-PlanningProblemGeneration). It provides the following functionality:
