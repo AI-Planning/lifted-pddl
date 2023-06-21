@@ -250,38 +250,53 @@ class Parser:
 		self.goals = set([(True, x.predicate.name, tuple(self.object_names.index(obj.name) for obj in x.subterms)) if isinstance(x, Atom) else \
 					  (False, x.subformulas[0].predicate.name, tuple(self.object_names.index(obj.name) for obj in x.subformulas[0].subterms)) for x in subformulas])
 
+	# Returns the name of the object whose index is @obj_ind
+	def get_object_name(self, obj_ind):
+		assert type(obj_ind) == int, "@obj_ind must be an integer"
+
+		return self.object_names[obj_ind]
+
+	# Given a list/tuple of object indexes, it returns a tuple with their names
+	def get_object_names(self, obj_ind_list):
+		assert type(obj_ind_list) in (list, tuple), "@obj_ind_list must be either a list or a tuple"
+
+		return tuple([self.get_object_name(obj_ind) for obj_ind in obj_ind_list])
+
+	# Returns the type of the object whose index is @obj_ind
+	def get_object_type(self, obj_ind):
+		assert type(obj_ind) == int, "@obj_ind must be an integer"
+
+		return self.object_types[obj_ind]
+
+	# Given a list/tuple of object indexes, it returns a tuple with their types
+	def get_object_types(self, obj_ind_list):
+		assert type(obj_ind_list) in (list, tuple), "@obj_ind_list must be either a list or a tuple"
+
+		return tuple([self.get_object_type(obj_ind) for obj_ind in obj_ind_list])
+
+	# Returns the index of the object whose name is @obj_name
+	def get_object_index(self, obj_name):
+		assert type(obj_name) == str, "@obj_name must be a string"
+
+		return self.object_names.index(obj_name)
+
+	# Given a list/tuple with object names, it returns a tuple with their indexes
+	def get_object_indexes(self, obj_name_list):
+		assert type(obj_name_list) in (list, tuple), "@obj_name_list must be either a list or a tuple"
+
+		return tuple([self.get_object_index(obj_name) for obj_name in obj_name_list])
 
 	"""
-	<Specification of get_applicable_actions>
-	Returns the ground applicable actions at the current state (given by self.object_names, self.object_types and self.atoms)
-	Applicable actions are returned as a dictionary where the key is the action name and the value
-	is a list containing all the variable substitutions (groundings) which make the action applicable.
+	This method modifies the current state of the problem. More specifically,
+	it sets @curr_state_atoms as self.atoms.
 
-	<Description>
-	The algorithm used to obtain the applicable actions is heavily inspired by Powerlifted (https://github.com/abcorrea/powerlifted).
-	More specifically, by the method detailed in 'Lifted Successor Generation using Query Optimization Techniques' by Correa et al.
-	We implement the 'naive join' algorithm detailed in that work directly in Python, without using any framework for query evaluation.
-	The algorithm is as follows:
-
-	1. Iterate over actions.
-	2. For each action, iterate over preconditions.
-	3. For each precondition:
-		- Associate each atom's object with the corresponding action parameter (atom obj_ind to parameter_ind, which is the same as the variable_assignment_ind)
-		- Obtain the indexes of atom's objects corresponding to bound variables in the partial variable assignments
-			- This is something like "We need to compare first object of atom with third object of variable assignemnt and second object of atom with sixth object of variable assignment,
-			  and they need to be equal"
-		- Iterate over each atom in the problem.
-		- For each atom:
-			- Check if the atom's predicate is the same as the precondition's predicate
-			- Check if the type of each atom's object inherits from the type of the corresponding action parameter
-			- If any of these two conditions are false, we skip this atom
-			- Iterate over each partial variable assignment
-				- Check if the atom objects corresponding to bound variables match the objects of the partial variable assignment
-				- If true, add a new variable assignment:
-					- Copy the old variable assignment
-					- For each atom's object, change the corresponding object of the variable assignment to it (bind new variables)
-	4. Return valid (applicable) variable assignments for the action.
+	@curr_state_atoms A set with the atoms of the next state, where each atom
+					  is in the form ('pred_name', (obj_ind_1, ..., obj_ind_n))					  
 	"""
+	def set_current_state(self, curr_state_atoms):
+		assert type(curr_state_atoms) == set, "@curr_state_atoms must be a set"
+
+		self.atoms = curr_state_atoms.copy() # We copy so that the reference is not shared
 
 	"""
 	Auxiliary function used by get_applicable_actions. It receives a set of variable assignments (each one with an arbitrary number of free and bind variables),
@@ -625,26 +640,80 @@ class Parser:
 
 		return atoms_pddl_format
 
+	"""
+	This method returns the PDDL encoding of the problem stored in the parser.
 
+	@problem_name Name of the PDDL problem to output
+	"""
+	def dump_pddl_problem(self, problem_name):
+		# <Definition (and problem name)>
+		pddl_problem = f"(define (problem {problem_name})\n\n"
 
+		# <Domain name>
+		pddl_problem += f'(:domain {self.domain_name})\n\n'
 
+		# <Objects>
 
+		# Begin :objects
+		pddl_problem += '(:objects\n'
 
+		# Get objects of each type - From ['block', 'block', 'circle'] to {'block': ['A','B'], 'circle':['C']}
+		object_types_dict = dict()
 
+		for name, t in zip(self.object_names, self.object_types):
+			if t in object_types_dict:
+				object_types_dict[t].append(name)
+			else:
+				object_types_dict[t] = [name]
 
+		for key in object_types_dict:
+			pddl_problem += '\t'
 
+			for name in object_types_dict[key]:
+				pddl_problem += f'{name} '
 
+			pddl_problem += f'- {key}\n'
 
+		# End :objects
+		pddl_problem += ')\n\n'
 
+		# <Initial state atoms (:init)>
 
+		# Begin :init
+		pddl_problem += '(:init\n'
 
+		# Add each atom of the initial state
+		for atom in self.atoms:
+			pddl_problem += f'\t({atom[0]}'
 
+			for obj_ind in atom[1]:
+				pddl_problem += f' {self.get_object_name(obj_ind)}'
 
+			pddl_problem += ')\n'
 
+		# End :init
+		pddl_problem +=')\n\n'
 
+		# <Goal atoms (:goal)>
 
+		# Begin :goal
 
+		pddl_problem += '(:goal (and\n'
 
+		# Add goal atoms
+		for atom in self.goals:
+			pddl_problem += f'\t({atom[0]}'
 
+			for obj_ind in atom[1]:
+				pddl_problem += f' {self.get_object_name(obj_ind)}'
 
+			pddl_problem += ')\n'
 
+		# End :goal
+		pddl_problem += '))\n'
+
+		# <End>
+		pddl_problem += ")"
+
+		# <<Return the PDDL problem>>
+		return pddl_problem

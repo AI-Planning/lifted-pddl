@@ -16,3 +16,5 @@ src/lifted_pddl/data/blocksworld-problem.pddl
 src/lifted_pddl/data/logistics-domain-exists.pddl
 src/lifted_pddl/data/logistics-domain.pddl
 src/lifted_pddl/data/logistics-problem.pddl
+src/lifted_pddl/data/sokoban-domain-no-clear.pddl
+src/lifted_pddl/data/sokoban-problem.pddl
