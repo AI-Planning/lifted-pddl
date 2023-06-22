@@ -702,9 +702,9 @@ class Parser:
 
 		# Add goal atoms
 		for atom in self.goals:
-			pddl_problem += f'\t({atom[0]}'
+			pddl_problem += f'\t({atom[1]}'
 
-			for obj_ind in atom[1]:
+			for obj_ind in atom[2]:
 				pddl_problem += f' {self.get_object_name(obj_ind)}'
 
 			pddl_problem += ')\n'
