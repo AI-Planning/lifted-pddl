@@ -246,9 +246,15 @@ class Parser:
 		# Each goal is represented as a tuple (is_true, pred_name, object_indexes)
 		# object_indexes is a tuple containing the index of each object the atom of the goal is instantiated on
 		# is_true equals False if the goal is negative (e.g., (not (at t1 l1)) ) and True otherwise
-		subformulas = problem.goal.subformulas
-		self.goals = set([(True, x.predicate.name, tuple(self.object_names.index(obj.name) for obj in x.subterms)) if isinstance(x, Atom) else \
-					  (False, x.subformulas[0].predicate.name, tuple(self.object_names.index(obj.name) for obj in x.subformulas[0].subterms)) for x in subformulas])
+		
+		# The goal contains a single atom (e.g., ( :goal (and (on b2 b1))) )
+		if isinstance(problem.goal, Atom):
+			self.goals = set([(True, problem.goal.predicate.name, tuple(self.object_names.index(obj.name) for obj in problem.goal.subterms))])			
+
+		else: # The goal contains more than a single atom
+			subformulas = problem.goal.subformulas
+			self.goals = set([(True, x.predicate.name, tuple(self.object_names.index(obj.name) for obj in x.subterms)) if isinstance(x, Atom) else \
+						  (False, x.subformulas[0].predicate.name, tuple(self.object_names.index(obj.name) for obj in x.subformulas[0].subterms)) for x in subformulas])
 
 	# Returns the name of the object whose index is @obj_ind
 	def get_object_name(self, obj_ind):
