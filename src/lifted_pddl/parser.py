@@ -4,7 +4,7 @@ from itertools import product, chain
 import copy
 
 from tarski.io import PDDLReader
-from tarski.syntax.formulas import CompoundFormula, QuantifiedFormula, Atom
+from tarski.syntax.formulas import CompoundFormula, QuantifiedFormula, Atom, Tautology
 from tarski.fstrips.fstrips import AddEffect, DelEffect
 
 import sys
@@ -250,7 +250,8 @@ class Parser:
 		# The goal contains a single atom (e.g., ( :goal (and (on b2 b1))) )
 		if isinstance(problem.goal, Atom):
 			self.goals = set([(True, problem.goal.predicate.name, tuple(self.object_names.index(obj.name) for obj in problem.goal.subterms))])			
-
+		elif isinstance(problem.goal, Tautology): # Goal is empty (it is composed of an empty (and) formula)
+			self.goals = set()
 		else: # The goal contains more than a single atom
 			subformulas = problem.goal.subformulas
 			self.goals = set([(True, x.predicate.name, tuple(self.object_names.index(obj.name) for obj in x.subterms)) if isinstance(x, Atom) else \
