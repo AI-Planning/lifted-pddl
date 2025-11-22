@@ -708,13 +708,14 @@ class Parser:
 		pddl_problem += '(:goal (and\n'
 
 		# Add goal atoms
-		for atom in self.goals:
-			pddl_problem += f'\t({atom[1]}'
+		for cond in self.goals:
+			cond_str = f"({cond[1]} " + ' '.join(cond[2]) + ')' if len(cond[2]) > 0 else \
+					   f"({cond[1]})"
 
-			for obj_ind in atom[2]:
-				pddl_problem += f' {self.get_object_name(obj_ind)}'
+			if cond[0] is False: # Negative goal condition -> we add "(not ...)"
+				cond_str = f"(not {cond_str})"
 
-			pddl_problem += ')\n'
+			pddl_problem += f"\t{cond_str}\n"
 
 		# End :goal
 		pddl_problem += '))\n'
@@ -724,3 +725,4 @@ class Parser:
 
 		# <<Return the PDDL problem>>
 		return pddl_problem
+
