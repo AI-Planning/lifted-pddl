@@ -709,7 +709,7 @@ class Parser:
 
 		# Add goal atoms
 		for cond in self.goals:
-			cond_str = f"({cond[1]} " + ' '.join(str(x) for x in cond[2]) + ')' if len(cond[2]) > 0 else \
+			cond_str = f"({cond[1]} " + ' '.join(self.get_object_name(obj_ind) for obj_ind in cond[2]) + ')' if len(cond[2]) > 0 else \
 					   f"({cond[1]})"
 
 			if cond[0] is False: # Negative goal condition -> we add "(not ...)"
@@ -725,5 +725,6 @@ class Parser:
 
 		# <<Return the PDDL problem>>
 		return pddl_problem
+
 
 
