@@ -210,7 +210,8 @@ class Parser:
 					preconds_list.append(precond)
 			"""
 
-			preconds_tuple = tuple([(preffix, precond.predicate.name, tuple([var_names.index(var.symbol) for var in precond.subterms])) for preffix, precond in preconds_list])
+			# if not isinstance(precond, Tautology) -> skip empty preconditions (i.e., '(and)')
+			preconds_tuple = tuple([(preffix, precond.predicate.name, tuple([var_names.index(var.symbol) for var in precond.subterms])) for preffix, precond in preconds_list if not isinstance(precond, Tautology)])
 
 			# Action effects, as a tuple made up of every effect
 			# Each effect is represented as a tuple (is_add_effect, predicate_name, vars)
@@ -725,6 +726,7 @@ class Parser:
 
 		# <<Return the PDDL problem>>
 		return pddl_problem
+
 
 
 
